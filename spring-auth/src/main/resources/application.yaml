@@ -3,10 +3,13 @@ spring:
   application:
     name: spring-auth
 
-  # MongoDB Configuration
+  threads:
+    virtual:
+      enabled: true
+
   data:
     mongodb:
-      uri: mongo-uri
+      uri: ${MONGO_URI:mongo-uri}
 
 # Server Configuration
 server:

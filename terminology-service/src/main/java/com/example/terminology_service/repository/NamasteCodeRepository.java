@@ -1,19 +1,18 @@
 package com.example.terminology_service.repository;
 
 import com.example.terminology_service.model.NamasteCode;
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface NamasteCodeRepository extends MongoRepository<NamasteCode, String> {
+public interface NamasteCodeRepository extends ReactiveMongoRepository<NamasteCode, String> {
 
     @Query(value = "{'$or': [{'tm2_code': ?0}, {'code': ?0}]}", sort = "{'confidence_score': -1}")
-    List<NamasteCode> findByAnyCode(@Param("codeValue") String codeValue);
+    Flux<NamasteCode> findByAnyCode(@Param("codeValue") String codeValue);
 
     @Query("{'$or': [" +
             "{'code_description': {$regex: ?0, $options: 'i'}}, " +
@@ -21,14 +20,14 @@ public interface NamasteCodeRepository extends MongoRepository<NamasteCode, Stri
             "{'tm2_title': {$regex: ?0, $options: 'i'}}, " +
             "{'code_title': {$regex: ?0, $options: 'i'}}" +
             "]}")
-    List<NamasteCode> findBySymptoms(@Param("symptomQuery") String symptomQuery);
+    Flux<NamasteCode> findBySymptoms(@Param("symptomQuery") String symptomQuery);
 
-    Optional<NamasteCode> findByCode(String code);
+    Mono<NamasteCode> findByCode(String code);
 
     @Query("{'code_title': {$regex: ?0, $options: 'i'}}")
-    List<NamasteCode> findByCodeTitleContainingIgnoreCase(@Param("query") String query);
+    Flux<NamasteCode> findByCodeTitleContainingIgnoreCase(@Param("query") String query);
 
-    List<NamasteCode> findByType(String type);
+    Flux<NamasteCode> findByType(String type);
 
-    Optional<NamasteCode> findTopByCodeOrderByConfidenceScoreDesc(String code);
+    Mono<NamasteCode> findTopByCodeOrderByConfidenceScoreDesc(String code);
 }

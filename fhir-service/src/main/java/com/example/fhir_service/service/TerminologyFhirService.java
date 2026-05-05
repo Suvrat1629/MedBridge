@@ -9,14 +9,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-/**
- * FHIR R4-compliant terminology service
- * Delegates data operations to the terminology service via REST calls
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,45 +26,54 @@ public class TerminologyFhirService {
     private final FhirContext fhirContext;
     private final IParser jsonParser;
 
-    /**
-     * Serialize FHIR resource to JSON
-     */
+    // Virtual-thread scheduler for blocking HAPI FHIR operations
+    private static final Scheduler FHIR_SCHEDULER =
+            Schedulers.fromExecutor(Executors.newVirtualThreadPerTaskExecutor());
+
     public String toJson(Resource resource) {
         return jsonParser.encodeResourceToString(resource);
     }
 
-    /**
-     * Create FHIR Parameters for search by code result - MAIN FEATURE 1
-     */
-    public Parameters createSearchByCodeResult(String codeValue) {
+    public Mono<Parameters> createSearchByCodeResult(String codeValue) {
         log.info("Creating FHIR Parameters for code search: {}", codeValue);
+        return terminologyServiceClient.searchByCode(codeValue)
+                .flatMap(result -> Mono.fromCallable(() -> buildSearchByCodeParams(codeValue, result))
+                        .subscribeOn(FHIR_SCHEDULER));
+    }
 
+    public Mono<Parameters> createSearchBySymptomsResult(List<String> symptoms) {
+        if (symptoms == null || symptoms.isEmpty()) {
+            return Mono.fromCallable(() -> {
+                Parameters parameters = new Parameters();
+                parameters.setId("search-by-symptoms-result-" + System.currentTimeMillis());
+                parameters.addParameter("result", new BooleanType(false));
+                parameters.addParameter("message", new StringType("No symptoms provided"));
+                return parameters;
+            }).subscribeOn(FHIR_SCHEDULER);
+        }
+        log.info("Creating FHIR Parameters for symptoms search: {}", symptoms);
+        return terminologyServiceClient.searchBySymptoms(symptoms)
+                .flatMap(allResults -> Mono.fromCallable(() -> buildSearchBySymptomsParams(symptoms, allResults))
+                        .subscribeOn(FHIR_SCHEDULER));
+    }
+
+    private Parameters buildSearchByCodeParams(String codeValue, List<NamasteCode> result) {
         Parameters parameters = new Parameters();
         parameters.setId("search-by-code-result-" + codeValue);
 
-        // Call terminology service
-        List<NamasteCode> result = terminologyServiceClient.searchByCode(codeValue);
-
         if (result.isEmpty()) {
-            // Result parameter (false = not found)
             parameters.addParameter("result", new BooleanType(false));
             parameters.addParameter("message", new StringType("No code found matching: " + codeValue));
             return parameters;
         }
 
-        // Result parameter (true = found)
         parameters.addParameter("result", new BooleanType(true));
         parameters.addParameter("totalMatches", new IntegerType(result.size()));
 
-        // Process all found codes
-        for (int i = 0; i < result.size(); i++) {
-            NamasteCode namasteCode = result.get(i);
-
-            // Create a parameter group for each match
+        for (NamasteCode namasteCode : result) {
             Parameters.ParametersParameterComponent matchGroup = new Parameters.ParametersParameterComponent();
             matchGroup.setName("match");
 
-            // Add found code details
             Parameters.ParametersParameterComponent codeParam = new Parameters.ParametersParameterComponent();
             codeParam.setName("code");
             codeParam.addPart().setName("system").setValue(new UriType("http://terminology.hl7.org.in/CodeSystem/namaste"));
@@ -72,10 +81,8 @@ public class TerminologyFhirService {
             codeParam.addPart().setName("display").setValue(new StringType(namasteCode.getNamasteName()));
             matchGroup.addPart(codeParam);
 
-            // Add type parameter
             matchGroup.addPart().setName("type").setValue(new StringType(namasteCode.getNamasteCategory()));
 
-            // Add TM2 mapping if available
             if (namasteCode.getIcd11Tm2Code() != null) {
                 Parameters.ParametersParameterComponent tm2Param = new Parameters.ParametersParameterComponent();
                 tm2Param.setName("tm2Mapping");
@@ -87,11 +94,9 @@ public class TerminologyFhirService {
                 matchGroup.addPart(tm2Param);
             }
 
-            // Add code description and confidence
             if (namasteCode.getNamasteDescription() != null) {
                 matchGroup.addPart().setName("description").setValue(new StringType(namasteCode.getNamasteDescription()));
             }
-
             if (namasteCode.getConfidenceScore() != null) {
                 matchGroup.addPart().setName("confidenceScore").setValue(new DecimalType(namasteCode.getConfidenceScore()));
             }
@@ -102,28 +107,8 @@ public class TerminologyFhirService {
         return parameters;
     }
 
-    /**
-     * Create FHIR Parameters for search by symptoms result - MAIN FEATURE 2
-     * Modified to simulate grouped results by grouping by TM2 code
-     */
-    public Parameters createSearchBySymptomsResult(List<String> symptoms) {
-        log.info("Creating FHIR Parameters for symptoms search: {}", symptoms);
-
-        if (symptoms == null || symptoms.isEmpty()) {
-            // Create empty parameters if no symptoms provided
-            Parameters parameters = new Parameters();
-            parameters.setId("search-by-symptoms-result-" + System.currentTimeMillis());
-            parameters.addParameter("result", new BooleanType(false));
-            parameters.addParameter("message", new StringType("No symptoms provided"));
-            return parameters;
-        }
-
-        // Call terminology service - for now using the individual symptom search
-        // We can enhance this later when the terminology service supports grouped symptom search
-        List<NamasteCode> allResults = terminologyServiceClient.searchBySymptoms(symptoms);
-
+    private Parameters buildSearchBySymptomsParams(List<String> symptoms, List<NamasteCode> allResults) {
         if (allResults.isEmpty()) {
-            // Create empty parameters if no results found
             Parameters parameters = new Parameters();
             parameters.setId("search-by-symptoms-result-" + System.currentTimeMillis());
             parameters.addParameter("result", new BooleanType(false));
@@ -131,7 +116,6 @@ public class TerminologyFhirService {
             return parameters;
         }
 
-        // Group results by TM2 code to simulate disease grouping
         Map<String, List<NamasteCode>> groupedByTm2 = allResults.stream()
                 .filter(code -> code.getTm2Code() != null)
                 .collect(Collectors.groupingBy(NamasteCode::getTm2Code));
@@ -152,7 +136,6 @@ public class TerminologyFhirService {
                         a.getSimilarityScore() != null ? a.getSimilarityScore() : 0.0))
                 .collect(Collectors.toList());
 
-        // Check if results exceed 20 DISEASE GROUPS
         if (groupedResults.size() > 20) {
             Parameters parameters = new Parameters();
             parameters.setId("search-by-symptoms-error-" + System.currentTimeMillis());
@@ -164,22 +147,16 @@ public class TerminologyFhirService {
             return parameters;
         }
 
-        // Return ALL grouped results
         Parameters parameters = new Parameters();
         parameters.setId("search-by-symptoms-grouped-results-" + System.currentTimeMillis());
         parameters.addParameter("result", new BooleanType(true));
         parameters.addParameter("totalDiseaseGroups", new IntegerType(groupedResults.size()));
         parameters.addParameter("matchedSymptoms", new StringType(String.join(", ", symptoms)));
 
-        // Add each disease group as a parameter
-        for (int i = 0; i < groupedResults.size(); i++) {
-            DiseaseMapping diseaseMapping = groupedResults.get(i);
-
-            // Create a parameter group for each disease
+        for (DiseaseMapping diseaseMapping : groupedResults) {
             Parameters.ParametersParameterComponent diseaseGroup = new Parameters.ParametersParameterComponent();
             diseaseGroup.setName("diseaseGroup");
 
-            // Add TM2 disease information
             Parameters.ParametersParameterComponent tm2Info = new Parameters.ParametersParameterComponent();
             tm2Info.setName("tm2Disease");
             tm2Info.addPart().setName("system").setValue(new UriType("http://id.who.int/icd/release/11/tm2"));
@@ -190,21 +167,15 @@ public class TerminologyFhirService {
             }
             diseaseGroup.addPart(tm2Info);
 
-            // Add symptom similarity score
             if (diseaseMapping.getSimilarityScore() != null) {
                 diseaseGroup.addPart().setName("symptomSimilarityScore").setValue(new DecimalType(diseaseMapping.getSimilarityScore()));
             }
-
-            // Add count of traditional medicine mappings
             diseaseGroup.addPart().setName("traditionalMedicineMappingCount").setValue(new IntegerType(diseaseMapping.getMappingCount()));
 
-            // Add all traditional medicine mappings for this disease
-            List<NamasteCode> mappings = diseaseMapping.getMappings();
-            for (NamasteCode mapping : mappings) {
+            for (NamasteCode mapping : diseaseMapping.getMappings()) {
                 Parameters.ParametersParameterComponent mappingParam = new Parameters.ParametersParameterComponent();
                 mappingParam.setName("traditionalMedicineMapping");
 
-                // Add traditional medicine code details
                 Parameters.ParametersParameterComponent codeParam = new Parameters.ParametersParameterComponent();
                 codeParam.setName("code");
                 codeParam.addPart().setName("system").setValue(new UriType("http://terminology.hl7.org.in/CodeSystem/namaste"));
@@ -212,15 +183,10 @@ public class TerminologyFhirService {
                 codeParam.addPart().setName("display").setValue(new StringType(mapping.getNamasteName()));
                 mappingParam.addPart(codeParam);
 
-                // Add type (ayurveda, siddha, unani)
                 mappingParam.addPart().setName("type").setValue(new StringType(mapping.getNamasteCategory()));
-
-                // Add description if available
                 if (mapping.getNamasteDescription() != null) {
                     mappingParam.addPart().setName("description").setValue(new StringType(mapping.getNamasteDescription()));
                 }
-
-                // Add mapping confidence score
                 if (mapping.getConfidenceScore() != null) {
                     mappingParam.addPart().setName("mappingConfidenceScore").setValue(new DecimalType(mapping.getConfidenceScore()));
                 }
