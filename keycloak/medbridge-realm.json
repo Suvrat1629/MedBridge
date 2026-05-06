@@ -1,0 +1,60 @@
+{
+  "realm": "medbridge",
+  "displayName": "MedBridge",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionMaxLifespan": 5184000,
+  "roles": {
+    "realm": [
+      { "name": "PATIENT", "description": "Patient user", "composite": false },
+      { "name": "DOCTOR", "description": "Healthcare provider", "composite": false },
+      { "name": "ADMIN", "description": "Platform administrator", "composite": false }
+    ]
+  },
+  "defaultRoles": ["PATIENT"],
+  "clients": [
+    {
+      "clientId": "medbridge-web",
+      "name": "MedBridge Web App",
+      "description": "SPA frontend — Authorization Code + PKCE",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ]
+    },
+    {
+      "clientId": "medbridge-service",
+      "name": "MedBridge Internal Service",
+      "description": "Service-to-service — Client Credentials",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "medbridge-service-secret"
+    }
+  ]
+}

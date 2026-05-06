@@ -25,14 +25,13 @@ public class GatewayInfoController {
     @GetMapping("/info")
     public Map<String, Object> info() {
         Map<String, Object> info = new HashMap<>();
-        info.put("name", "Namaste API Gateway");
+        info.put("name", "MedBridge API Gateway");
         info.put("version", "2.0.0");
-        info.put("description", "New WebFlux Gateway for Namaste Microservices");
+        info.put("description", "WebFlux Gateway — JWT validation via Keycloak JWKS");
 
         Map<String, String> routes = new HashMap<>();
-        routes.put("Authentication", "/api/auth/** → lb://spring-auth");
         routes.put("FHIR (Protected)", "/api/fhir/** → lb://fhir-service");
-        routes.put("Terminology", "/api/terminology/** → lb://terminology-service");
+        routes.put("Terminology (Public)", "/api/terminology/** → lb://terminology-service");
 
         info.put("routes", routes);
         return info;

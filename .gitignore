@@ -1,1 +1,44 @@
-.idea
+# Maven
+target/
+*.class
+*.jar
+!**/src/main/**/*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE - IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# IDE - VS Code
+.vscode/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+*.env
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# Docker volumes (if mounted locally)
+keycloak/data/
+mongo-data/

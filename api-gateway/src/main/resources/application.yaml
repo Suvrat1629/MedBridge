@@ -9,32 +9,24 @@ spring:
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=600s
 
-  # New Gateway Configuration Structure
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8083}/realms/medbridge/protocol/openid-connect/certs
+
   cloud:
     gateway:
       server:
         webflux:
-          # Route Definitions
           routes:
-            # Auth Service Routes (PUBLIC)
-            - id: spring-auth-service
-              uri: lb://spring-auth
-              predicates:
-                - name: Path
-                  args:
-                    pattern: /api/auth/**
-
-            # FHIR Service Routes (PROTECTED)
             - id: fhir-service
               uri: lb://fhir-service
               predicates:
                 - name: Path
                   args:
                     pattern: /api/fhir/**
-              filters:
-                - name: AuthenticationGatewayFilter
 
-            # Terminology Service Routes (PUBLIC)
             - id: terminology-service
               uri: lb://terminology-service
               predicates:
@@ -42,7 +34,6 @@ spring:
                   args:
                     pattern: /api/terminology/**
 
-          # FIXED Global CORS Configuration
           globalcors:
             cors-configurations:
               '[/**]':
