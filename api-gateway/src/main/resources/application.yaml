@@ -2,10 +2,10 @@ spring:
   application:
     name: api-gateway
 
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=1000,expireAfterWrite=600s
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
 
   security:
     oauth2:
@@ -19,18 +19,32 @@ spring:
         webflux:
           routes:
             - id: fhir-service
-              uri: lb://fhir-service
+              uri: ${FHIR_SERVICE_URL:http://localhost:8083}
               predicates:
                 - name: Path
                   args:
                     pattern: /api/fhir/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 5
+                    redis-rate-limiter.burstCapacity: 10
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@jwtUserKeyResolver}"
 
             - id: terminology-service
-              uri: lb://terminology-service
+              uri: ${TERMINOLOGY_SERVICE_URL:http://localhost:8082}
               predicates:
                 - name: Path
                   args:
                     pattern: /api/terminology/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    redis-rate-limiter.replenishRate: 10
+                    redis-rate-limiter.burstCapacity: 20
+                    redis-rate-limiter.requestedTokens: 1
+                    key-resolver: "#{@ipKeyResolver}"
 
           globalcors:
             cors-configurations:
@@ -47,11 +61,10 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka/
-    fetch-registry: true
     register-with-eureka: true
+    fetch-registry: false
   instance:
     prefer-ip-address: true
-    hostname: localhost
     instance-id: ${spring.application.name}:${server.port}
 
 management:

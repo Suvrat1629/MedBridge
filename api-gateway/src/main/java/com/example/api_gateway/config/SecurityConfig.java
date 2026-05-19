@@ -17,9 +17,9 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(authz -> authz
                         .pathMatchers("/api/terminology/**").permitAll()
+                        .pathMatchers("/api/fhir/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/gateway/**").permitAll()
-                        .pathMatchers("/api/fhir/**").authenticated()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

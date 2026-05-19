@@ -30,8 +30,8 @@ public class GatewayInfoController {
         info.put("description", "WebFlux Gateway — JWT validation via Keycloak JWKS");
 
         Map<String, String> routes = new HashMap<>();
-        routes.put("FHIR (Protected)", "/api/fhir/** → lb://fhir-service");
-        routes.put("Terminology (Public)", "/api/terminology/** → lb://terminology-service");
+        routes.put("FHIR (Protected)", "/api/fhir/** → fhir-service:8083");
+        routes.put("Terminology (Public)", "/api/terminology/** → terminology-service:8082");
 
         info.put("routes", routes);
         return info;

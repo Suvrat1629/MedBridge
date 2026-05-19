@@ -10,13 +10,21 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI:mongo-uri}
+  cache:
+    type: caffeine
+    cache-names:
+      - code-lookup
+      - category-lookup
+      - namaste-code-lookup
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=3600s
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka/
     register-with-eureka: true
-    fetch-registry: true
+    fetch-registry: false
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}

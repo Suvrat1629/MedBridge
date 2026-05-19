@@ -39,6 +39,8 @@ logs/
 # Environment / secrets
 .env
 *.env
+.env.local
+*.env.local
 application-local.yml
 application-local.yaml
 application-local.properties
@@ -46,3 +48,6 @@ application-local.properties
 # Docker volumes (if mounted locally)
 keycloak/data/
 mongo-data/
+
+# Raw data files
+medicine_data.csv

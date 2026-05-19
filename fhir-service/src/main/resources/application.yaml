@@ -14,22 +14,23 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761}/eureka/
-    fetch-registry: true
     register-with-eureka: true
+    fetch-registry: false
   instance:
     prefer-ip-address: true
-    hostname: localhost
     instance-id: ${spring.application.name}:${server.port}
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
-    health-check-url-path: /actuator/health
-    status-page-url-path: /actuator/info
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
   tracing:
     sampling:
       probability: 1.0
@@ -44,7 +45,21 @@ fhir:
     description: FHIR R4 compliant terminology service for traditional medicine codes
 
 terminology-service:
-  base-url: lb://terminology-service
+  base-url: ${TERMINOLOGY_URL:http://localhost:8082}
   timeout:
     connection: 5000
     read: 30000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      terminology-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+  timelimiter:
+    instances:
+      terminology-service:
+        timeout-duration: 20s
