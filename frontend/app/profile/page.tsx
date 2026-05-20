@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useKeycloak } from '@/contexts/KeycloakContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValue } from 'framer-motion';
-import { User, Shield, Activity, Heart, Clock, Check, CreditCard as Edit3, Save, X, Lock, Eye, EyeOff, Bell, Settings, LogOut, Dna, Stethoscope, Plus, Key, Copy, RefreshCw, Code, Zap, Globe, BarChart2, TrendingUp, PieChart, Users, BookOpen, HelpCircle } from 'lucide-react';
+import { User, Shield, Activity, Heart, Clock, Check, CreditCard as Edit3, Save, X, Bell, Settings, LogOut, Dna, Stethoscope, Plus, Key, Copy, RefreshCw, Code, Zap, Globe, BarChart2, TrendingUp, PieChart, Users, BookOpen, HelpCircle } from 'lucide-react';
 
 // Types and Interfaces
 interface UserProfile {
@@ -10,7 +12,6 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  aadhaar_masked: string;
   avatarUrl: string;
   verified: boolean;
   isOnline: boolean;
@@ -40,7 +41,6 @@ const mockFetch = async (url: string, options?: RequestInit): Promise<any> => {
       name: 'Alex Johnson',
       email: 'alex.johnson@techcorp.com',
       phone: '+91 98765 43210',
-      aadhaar_masked: 'xxxx-xxxx-1234',
       avatarUrl: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
       verified: true,
       isOnline: true,
@@ -61,14 +61,6 @@ const mockFetch = async (url: string, options?: RequestInit): Promise<any> => {
     };
   }
   
-  if (url === '/api/profile/aadhaar' && options?.method === 'POST') {
-    const body = JSON.parse(options.body as string);
-    return {
-      success: true,
-      aadhaar_masked: `xxxx-xxxx-${body.aadhaar.slice(-4)}`
-    };
-  }
-
   if (url === '/api/profile/update' && options?.method === 'POST') {
     const body = JSON.parse(options.body as string);
     return {
@@ -101,12 +93,6 @@ const mockFetch = async (url: string, options?: RequestInit): Promise<any> => {
   }
   
   throw new Error('API endpoint not implemented');
-};
-
-// Utility function for Aadhaar validation
-const isValidAadhaar = (aadhaar: string): boolean => {
-  const cleaned = aadhaar.replace(/\D/g, '');
-  return cleaned.length === 12 && /^\d{12}$/.test(cleaned);
 };
 
 // Email validation
@@ -400,10 +386,6 @@ const ProfileHeader: React.FC<{
               <Clock size={14} />
               Last active: {new Date(profile.lastLogin).toLocaleDateString()}
             </span>
-            <span className="flex items-center gap-1">
-              <User size={14} />
-              Developer since {new Date(profile.joinedDate).getFullYear()}
-            </span>
           </div>
         </div>
 
@@ -444,7 +426,7 @@ const ProfileHeader: React.FC<{
   );
 };
 
-// Profile Details Component with Integrated Aadhaar Editing
+// Profile Details Component
 const ProfileDetails: React.FC<{ 
   profile: UserProfile; 
   onUpdate: (field: keyof UserProfile, value: any) => void;
@@ -458,14 +440,6 @@ const ProfileDetails: React.FC<{
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Aadhaar editing states integrated into main editing flow
-  const [aadhaarValue, setAadhaarValue] = useState('');
-  const [showAadhaar, setShowAadhaar] = useState(false);
-  const [aadhaarValidationMessage, setAadhaarValidationMessage] = useState('');
-  const [isConfirmingAadhaar, setIsConfirmingAadhaar] = useState(false);
-  const [confirmValue, setConfirmValue] = useState('');
-  const [aadhaarChanged, setAadhaarChanged] = useState(false);
 
   const validatePersonalInfo = () => {
     const newErrors: { [key: string]: string } = {};
@@ -486,11 +460,6 @@ const ProfileDetails: React.FC<{
       newErrors.phone = 'Please enter a valid phone number';
     }
 
-    // Validate Aadhaar if changed
-    if (aadhaarChanged && aadhaarValue && !isValidAadhaar(aadhaarValue)) {
-      newErrors.aadhaar = 'Please enter a valid 12-digit Aadhaar number';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -503,50 +472,14 @@ const ProfileDetails: React.FC<{
       phone: profile.phone,
     });
     setErrors({});
-    setAadhaarValue('');
-    setAadhaarChanged(false);
-    setIsConfirmingAadhaar(false);
-    setConfirmValue('');
-    setAadhaarValidationMessage('');
     onEditToggle?.();
-  };
-
-  const handleAadhaarValidation = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    setAadhaarValue(cleaned);
-    setAadhaarChanged(true);
-    
-    setTimeout(() => {
-      if (cleaned.length === 0) {
-        setAadhaarValidationMessage('');
-      } else if (cleaned.length !== 12) {
-        setAadhaarValidationMessage('Aadhaar must be 12 digits');
-      } else if (isValidAadhaar(cleaned)) {
-        setAadhaarValidationMessage('Valid Aadhaar format');
-      } else {
-        setAadhaarValidationMessage('Invalid Aadhaar format');
-      }
-    }, 300);
   };
 
   const handleSave = async () => {
     if (!validatePersonalInfo()) return;
 
-    // If Aadhaar was changed and is valid, but not confirmed yet
-    if (aadhaarChanged && aadhaarValue && isValidAadhaar(aadhaarValue) && !isConfirmingAadhaar) {
-      setIsConfirmingAadhaar(true);
-      return;
-    }
-
-    // If confirming Aadhaar, validate confirmation
-    if (isConfirmingAadhaar && confirmValue !== aadhaarValue.slice(-4)) {
-      setErrors({ aadhaar: 'Confirmation does not match last 4 digits' });
-      return;
-    }
-    
     setIsSaving(true);
     try {
-      // Update personal info
       const personalResponse = await mockFetch('/api/profile/update', {
         method: 'POST',
         body: JSON.stringify(editedProfile),
@@ -557,26 +490,7 @@ const ProfileDetails: React.FC<{
         onUpdate('name', editedProfile.name);
         onUpdate('email', editedProfile.email);
         onUpdate('phone', editedProfile.phone);
-
-        // Update Aadhaar if it was changed
-        if (aadhaarChanged && aadhaarValue && isValidAadhaar(aadhaarValue)) {
-          const aadhaarResponse = await mockFetch('/api/profile/aadhaar', {
-            method: 'POST',
-            body: JSON.stringify({ aadhaar: aadhaarValue }),
-            headers: { 'Content-Type': 'application/json' }
-          });
-
-          if (aadhaarResponse.success) {
-            onUpdate('aadhaar_masked', aadhaarResponse.aadhaar_masked);
-          }
-        }
-
         setIsEditing(false);
-        setIsConfirmingAadhaar(false);
-        setAadhaarValue('');
-        setConfirmValue('');
-        setAadhaarChanged(false);
-        setAadhaarValidationMessage('');
         setErrors({});
       }
     } catch (error) {
@@ -594,11 +508,6 @@ const ProfileDetails: React.FC<{
       phone: profile.phone,
     });
     setErrors({});
-    setAadhaarValue('');
-    setAadhaarChanged(false);
-    setIsConfirmingAadhaar(false);
-    setConfirmValue('');
-    setAadhaarValidationMessage('');
   };
 
   return (
@@ -664,105 +573,6 @@ const ProfileDetails: React.FC<{
           error={errors.phone}
         />
 
-        {/* Integrated Aadhaar Field */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Aadhaar Number (12 digits)
-          </label>
-          
-          {!isEditing ? (
-            <div className="relative">
-              <div className="flex items-center gap-4 p-4 bg-white/50 border border-slate-200 rounded-xl">
-                <Lock size={16} className="text-slate-400" />
-                <span className="flex-1 font-mono">
-                  {showAadhaar ? '1234-5678-9012' : profile.aadhaar_masked}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                    Secure
-                  </span>
-                  <button
-                    onClick={() => setShowAadhaar(!showAadhaar)}
-                    className="p-1 text-slate-400 hover:text-slate-600"
-                  >
-                    {showAadhaar ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Aadhaar number is stored securely and encrypted. Only the last 4 digits are shown.
-              </p>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-4"
-            >
-              <div>
-                <input
-                  type="text"
-                  value={aadhaarValue}
-                  onChange={(e) => handleAadhaarValidation(e.target.value)}
-                  placeholder="Enter 12-digit Aadhaar number (optional)"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  maxLength={12}
-                  className={`w-full p-4 bg-white/50 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all font-mono ${
-                    errors.aadhaar ? 'border-red-300' : 'border-slate-200'
-                  }`}
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Leave empty to keep current Aadhaar number unchanged
-                </p>
-              </div>
-
-              {isConfirmingAadhaar && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-amber-50 border border-amber-200 rounded-xl"
-                >
-                  <p className="text-sm text-amber-800 mb-3">
-                    Please confirm by entering the last 4 digits of your Aadhaar:
-                  </p>
-                  <input
-                    type="text"
-                    value={confirmValue}
-                    onChange={(e) => setConfirmValue(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="Last 4 digits"
-                    maxLength={4}
-                    className="w-32 p-2 bg-white border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent font-mono"
-                    inputMode="numeric"
-                  />
-                </motion.div>
-              )}
-
-              {aadhaarValidationMessage && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className={`text-sm ${
-                    aadhaarValidationMessage.includes('Valid') ? 'text-emerald-600' : 'text-red-600'
-                  }`}
-                >
-                  {aadhaarValidationMessage}
-                </motion.div>
-              )}
-
-              {errors.aadhaar && (
-                <motion.div
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-600"
-                >
-                  {errors.aadhaar}
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </div>
-
         {isEditing && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -784,7 +594,7 @@ const ProfileDetails: React.FC<{
               ) : (
                 <>
                   <Save size={16} />
-                  {isConfirmingAadhaar ? 'Confirm & Save' : 'Save Changes'}
+                  Save Changes
                 </>
               )}
             </motion.button>
@@ -1206,55 +1016,38 @@ const BackgroundPattern: React.FC = () => (
 
 // Main Profile Page Component
 const ProfilePage: React.FC = () => {
+  const { userInfo, logout } = useKeycloak();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const data = await mockFetch('/api/profile');
-        setProfile(data);
-      } catch (error) {
-        console.error('Failed to load profile:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, []);
+    if (userInfo.id) {
+      setProfile({
+        id: userInfo.id,
+        name: userInfo.name || userInfo.username || 'Unknown User',
+        email: userInfo.email || '',
+        phone: '',
+        avatarUrl: '',
+        verified: true,
+        isOnline: true,
+        lastLogin: new Date().toISOString(),
+        joinedDate: new Date().toISOString(),
+        apiKeys: [],
+      });
+      setIsLoading(false);
+    }
+  }, [userInfo]);
 
   const handleProfileUpdate = (field: keyof UserProfile, value: any) => {
     if (profile) {
-      setProfile({
-        ...profile,
-        [field]: value
-      });
+      setProfile({ ...profile, [field]: value });
     }
   };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    try {
-      const response = await mockFetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.success) {
-        // In a real app, you would redirect to login page or clear auth state
-        console.log('Logged out successfully');
-        // Simulate logout process
-        setTimeout(() => {
-          alert('Logged out successfully! In a real app, you would be redirected to the login page.');
-          setIsLoggingOut(false);
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setIsLoggingOut(false);
-    }
+    logout();
   };
 
   const prefersReducedMotion = typeof window !== 'undefined' 
@@ -1337,4 +1130,10 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage;
+export default function ProfilePageWrapper() {
+  return (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  );
+}

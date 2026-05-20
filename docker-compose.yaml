@@ -8,10 +8,14 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_DB: dev-mem
+      KC_DB: dev-file
       KC_HEALTH_ENABLED: "true"
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
+      KC_SPI_THEME_STATIC_MAX_AGE: "-1"
     volumes:
       - ./keycloak:/opt/keycloak/data/import
+      - ./keycloak/themes:/opt/keycloak/themes
     networks:
       - medbridge-net
     healthcheck:
@@ -74,6 +78,7 @@ services:
     environment:
       EUREKA_URL: http://eureka:8761
       KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-medbridge}
       ZIPKIN_URL: http://zipkin:9411
       REDIS_HOST: redis
       FHIR_SERVICE_URL: http://fhir-service:8083

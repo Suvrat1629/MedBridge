@@ -6,6 +6,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import SearchFilter from './SearchFilter';
 import SearchResultsOverview from './SearchResults/SearchResultsOverview';
 import ResultsDetail from './SearchResults/ResultsDetail';
+import { useKeycloak } from '@/contexts/KeycloakContext';
 
 interface SystemMatch {
   code: string;
@@ -52,6 +53,7 @@ interface ApiResponse {
 type ViewState = 'search' | 'overview' | 'detail';
 
 export default function LiveDemoAutoplay() {
+  const { getAuthHeaders } = useKeycloak();
   const [searchMode, setSearchMode] = useState<'code' | 'symptoms'>('code');
   const [inputValue, setInputValue] = useState('');
   const [symptomTags, setSymptomTags] = useState<string[]>([]);
@@ -315,61 +317,26 @@ export default function LiveDemoAutoplay() {
       let response;
       
       if (searchMode === 'code') {
-        // Standard code search
         const apiUrl = `${process.env.NEXT_PUBLIC_URL}/api/fhir/search/code/${encodeURIComponent(inputValue.trim())}`;
         response = await fetch(apiUrl, {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         });
       } else {
-        // Symptom mode has two distinct flows:
-        
-        // Flow 1: Code selected from dropdown (inputValue is populated)
         if (hasCodeSelected) {
           const apiUrl = `${process.env.NEXT_PUBLIC_URL}/api/fhir/search/code/${encodeURIComponent(inputValue.trim())}`;
           response = await fetch(apiUrl, {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
           });
-        } 
-        // Flow 2: Multiple symptom tags added (symptomTags array is populated)
-        else if (hasSymptomTags) {
-          // Choose ONE of these API formats based on your backend:
-          
-          // Option A: POST with JSON body (RECOMMENDED)
+        } else if (hasSymptomTags) {
           const apiUrl = `${process.env.NEXT_PUBLIC_URL}/api/fhir/search/symptoms`;
           response = await fetch(apiUrl, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
             body: JSON.stringify({ symptoms: symptomTags })
           });
           
-          /* Option B: GET with JSON array in query param
-          const apiUrl = `${process.env.NEXT_PUBLIC_URL}/api/fhir/search/symptoms?symptoms=${encodeURIComponent(JSON.stringify(symptomTags))}`;
-          response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-          });
-          */
-          
-          /* Option C: GET with comma-separated string
-          const symptomsQuery = symptomTags.join(',');
-          const apiUrl = `${process.env.NEXT_PUBLIC_URL}/api/fhir/search/symptoms?query=${encodeURIComponent(symptomsQuery)}`;
-          response = await fetch(apiUrl, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-          });
-          */
         } else {
           throw new Error('Invalid search state');
         }

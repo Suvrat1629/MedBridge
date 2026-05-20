@@ -11,7 +11,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8083}/realms/medbridge/protocol/openid-connect/certs
+          jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8083}/realms/${KEYCLOAK_REALM:medbridge}/protocol/openid-connect/certs
 
   cloud:
     gateway:

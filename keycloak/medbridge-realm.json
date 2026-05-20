@@ -6,8 +6,12 @@
   "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
-  "resetPasswordAllowed": true,
+  "resetPasswordAllowed": false,
   "editUsernameAllowed": false,
+  "loginTheme": "medbridge",
+  "accountTheme": "keycloak.v2",
+  "adminTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
   "bruteForceProtected": true,
   "permanentLockout": false,
   "accessTokenLifespan": 300,
@@ -15,17 +19,26 @@
   "offlineSessionMaxLifespan": 5184000,
   "roles": {
     "realm": [
-      { "name": "PATIENT", "description": "Patient user", "composite": false },
-      { "name": "DOCTOR", "description": "Healthcare provider", "composite": false },
-      { "name": "ADMIN", "description": "Platform administrator", "composite": false }
+      {
+        "name": "USER",
+        "description": "Standard authenticated user",
+        "composite": false
+      },
+      {
+        "name": "ADMIN",
+        "description": "Platform administrator",
+        "composite": false
+      }
     ]
   },
-  "defaultRoles": ["PATIENT"],
+  "defaultRoles": [
+    "USER"
+  ],
   "clients": [
     {
       "clientId": "medbridge-web",
       "name": "MedBridge Web App",
-      "description": "SPA frontend — Authorization Code + PKCE",
+      "description": "SPA frontend \u2014 Authorization Code + PKCE",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": true,
@@ -37,16 +50,18 @@
         "pkce.code.challenge.method": "S256"
       },
       "redirectUris": [
-        "http://localhost:3000/*"
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
       ],
       "webOrigins": [
-        "http://localhost:3000"
+        "http://localhost:3000",
+        "http://localhost:5173"
       ]
     },
     {
       "clientId": "medbridge-service",
       "name": "MedBridge Internal Service",
-      "description": "Service-to-service — Client Credentials",
+      "description": "Service-to-service \u2014 Client Credentials",
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,

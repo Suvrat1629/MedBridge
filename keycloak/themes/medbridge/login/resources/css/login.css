@@ -1,0 +1,314 @@
+/* MedBridge Keycloak Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --mb-green:       #10b981;
+  --mb-green-dark:  #059669;
+  --mb-green-darker:#047857;
+  --mb-text:        #1f2937;
+  --mb-muted:       #6b7280;
+  --mb-border:      #e2e8f0;
+  --mb-bg:          #f0fdf4;
+  --mb-card:        #ffffff;
+  --mb-error:       #ef4444;
+  --mb-radius:      12px;
+  --mb-shadow:      0 20px 60px rgba(16,185,129,.12), 0 4px 16px rgba(0,0,0,.07);
+}
+
+/* ── PAGE ───────────────────────────────────────────────────── */
+html, body {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #dcfce7 100%) !important;
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* Hide the default side-panel layout, go full single-column */
+.login-pf-page {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 100vh !important;
+  padding: 2rem 1rem !important;
+  background: none !important;
+}
+
+/* ── LOGO HEADER ────────────────────────────────────────────── */
+#kc-header.login-pf-page-header {
+  width: 100% !important;
+  max-width: 440px !important;
+  margin-bottom: 1.5rem !important;
+  text-align: center !important;
+  background: none !important;
+}
+
+#kc-header-wrapper {
+  display: inline-block;
+}
+
+/* Replace header text with the SVG logo */
+#kc-header-wrapper {
+  font-size: 0 !important;       /* hide the realm-name text */
+  line-height: 0 !important;
+  background-image: url('../img/logo.svg') !important;
+  background-repeat: no-repeat !important;
+  background-size: contain !important;
+  background-position: center !important;
+  width: 200px !important;
+  height: 48px !important;
+  display: inline-block !important;
+}
+
+/* ── CARD ───────────────────────────────────────────────────── */
+#kc-content {
+  width: 100% !important;
+  max-width: 440px !important;
+  background: var(--mb-card) !important;
+  border-radius: var(--mb-radius) !important;
+  box-shadow: var(--mb-shadow) !important;
+  border: 1px solid #d1fae5 !important;
+  padding: 2.25rem 2rem !important;
+}
+
+#kc-content-wrapper {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* Remove inner padding from PatternFly wrapper */
+.card-pf, .login-pf-accounts,
+#kc-form-wrapper {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* ── PAGE TITLE ─────────────────────────────────────────────── */
+.login-pf-header {
+  text-align: center !important;
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1.25rem !important;
+  border-bottom: 1px solid #f0fdf4 !important;
+}
+
+#kc-page-title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: var(--mb-text) !important;
+  letter-spacing: -.02em !important;
+  margin: 0 !important;
+}
+
+/* ── LABELS ─────────────────────────────────────────────────── */
+.pf-c-form__label,
+.pf-c-form__label-text,
+label {
+  font-family: 'Inter', sans-serif !important;
+  font-size: .875rem !important;
+  font-weight: 500 !important;
+  color: var(--mb-text) !important;
+  margin-bottom: .3rem !important;
+  display: block;
+}
+
+/* ── INPUTS ─────────────────────────────────────────────────── */
+.pf-c-form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+select {
+  font-family: 'Inter', sans-serif !important;
+  width: 100% !important;
+  padding: .625rem .875rem !important;
+  font-size: .9375rem !important;
+  color: var(--mb-text) !important;
+  background: #fafafa !important;
+  border: 1.5px solid var(--mb-border) !important;
+  border-radius: 8px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color .2s, box-shadow .2s, background .2s !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  box-sizing: border-box !important;
+}
+
+.pf-c-form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: var(--mb-green) !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.15) !important;
+}
+
+input::placeholder { color: #9ca3af !important; }
+
+/* Password eye toggle */
+.pf-c-input-group {
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.pf-c-input-group input {
+  border-right: none !important;
+  border-radius: 8px 0 0 8px !important;
+  flex: 1 !important;
+}
+
+.pf-c-input-group .pf-c-button {
+  background: #fafafa !important;
+  border: 1.5px solid var(--mb-border) !important;
+  border-left: none !important;
+  border-radius: 0 8px 8px 0 !important;
+  padding: 0 .75rem !important;
+  color: var(--mb-muted) !important;
+  cursor: pointer !important;
+}
+
+.pf-c-input-group .pf-c-button:hover {
+  background: #f0fdf4 !important;
+  color: var(--mb-green) !important;
+}
+
+/* ── FORM GROUPS ────────────────────────────────────────────── */
+.form-group,
+.pf-c-form__group {
+  margin-bottom: 1.1rem !important;
+}
+
+/* ── SUBMIT BUTTON ──────────────────────────────────────────── */
+#kc-login,
+.pf-c-button.pf-m-primary,
+input[type="submit"],
+button[type="submit"] {
+  font-family: 'Inter', sans-serif !important;
+  background: linear-gradient(135deg, var(--mb-green) 0%, var(--mb-green-dark) 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: .9375rem !important;
+  padding: .75rem 1.5rem !important;
+  border-radius: 8px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(16,185,129,.3) !important;
+  transition: all .2s !important;
+  letter-spacing: .01em !important;
+  line-height: 1.5 !important;
+}
+
+#kc-login:hover,
+.pf-c-button.pf-m-primary:hover {
+  background: linear-gradient(135deg, var(--mb-green-dark) 0%, var(--mb-green-darker) 100%) !important;
+  box-shadow: 0 6px 16px rgba(16,185,129,.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+#kc-login:active,
+.pf-c-button.pf-m-primary:active {
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(16,185,129,.3) !important;
+}
+
+/* ── REMEMBER ME ROW ────────────────────────────────────────── */
+.login-pf-settings {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 1.1rem !important;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--mb-green) !important;
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+#rememberMe + label,
+.pf-c-check__label {
+  font-size: .875rem !important;
+  color: var(--mb-muted) !important;
+}
+
+/* ── FORGOT PASSWORD ────────────────────────────────────────── */
+#kc-form-options a,
+.login-pf-settings a {
+  font-size: .875rem !important;
+  color: var(--mb-green) !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+}
+
+#kc-form-options a:hover {
+  color: var(--mb-green-dark) !important;
+  text-decoration: underline !important;
+}
+
+/* ── LINKS (global) ─────────────────────────────────────────── */
+a {
+  color: var(--mb-green) !important;
+  text-decoration: none !important;
+  font-weight: 500 !important;
+  transition: color .15s !important;
+}
+
+a:hover {
+  color: var(--mb-green-dark) !important;
+  text-decoration: underline !important;
+}
+
+/* ── SIGN UP FOOTER ─────────────────────────────────────────── */
+#kc-info.login-pf-signup,
+#kc-registration-container {
+  text-align: center !important;
+  margin-top: 1.25rem !important;
+  padding-top: 1.25rem !important;
+  border-top: 1px solid #f0fdf4 !important;
+  font-size: .875rem !important;
+  color: var(--mb-muted) !important;
+}
+
+/* ── ALERTS / ERRORS ────────────────────────────────────────── */
+.alert,
+.pf-c-alert {
+  font-size: .8125rem !important;
+  border-radius: 8px !important;
+  padding: .625rem .875rem !important;
+  margin-bottom: 1rem !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.alert-error,
+.pf-c-alert.pf-m-danger {
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  color: var(--mb-error) !important;
+}
+
+.alert-success,
+.pf-c-alert.pf-m-success {
+  background: #f0fdf4 !important;
+  border: 1px solid #d1fae5 !important;
+  color: var(--mb-green-dark) !important;
+}
+
+/* Inline field errors */
+span.kc-feedback-text,
+#input-error,
+.pf-c-form__helper-text.pf-m-error {
+  display: block !important;
+  font-size: .8125rem !important;
+  color: var(--mb-error) !important;
+  margin-top: .25rem !important;
+}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: var(--mb-green); border-radius: 3px; }
