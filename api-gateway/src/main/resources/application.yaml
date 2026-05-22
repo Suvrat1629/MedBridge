@@ -32,6 +32,13 @@ spring:
                     redis-rate-limiter.requestedTokens: 1
                     key-resolver: "#{@jwtUserKeyResolver}"
 
+            - id: user-service
+              uri: ${USER_PROFILE_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/users/**
+
             - id: terminology-service
               uri: ${TERMINOLOGY_SERVICE_URL:http://localhost:8082}
               predicates:

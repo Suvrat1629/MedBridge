@@ -4,6 +4,23 @@ import { useState } from 'react';
 import LoadingScreen from '@/components/LoadingScreen';
 import GlobalBackground from '@/components/GlobalBackground';
 import { KeycloakProvider } from '@/contexts/KeycloakContext';
+import OnboardingModal from '@/components/OnboardingModal';
+import { useKeycloak } from '@/contexts/KeycloakContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
+
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { authenticated, initialized } = useKeycloak();
+  const { profile, loading, fetchProfile } = useUserProfile();
+
+  const needsOnboarding = initialized && authenticated && !loading && profile !== null && !profile.onboarded;
+
+  return (
+    <>
+      {needsOnboarding && <OnboardingModal onComplete={fetchProfile} />}
+      {children}
+    </>
+  );
+}
 
 interface ClientWrapperProps {
   children: React.ReactNode;
@@ -15,26 +32,20 @@ export default function ClientWrapper({ children }: ClientWrapperProps) {
 
   const handleLoadingComplete = () => {
     setIsLoading(false);
-    setTimeout(() => {
-      setShowBackground(true);
-    }, 100);
+    setTimeout(() => setShowBackground(true), 100);
   };
 
   return (
     <KeycloakProvider>
-      {isLoading && (
-        <LoadingScreen onLoadingComplete={handleLoadingComplete} />
-      )}
+      {isLoading && <LoadingScreen onLoadingComplete={handleLoadingComplete} />}
 
       {!isLoading && (
         <>
           <GlobalBackground />
-          <div
-            className={`transition-opacity duration-300 ${
-              showBackground ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            {children}
+          <div className={`transition-opacity duration-300 ${showBackground ? 'opacity-100' : 'opacity-0'}`}>
+            <OnboardingGate>
+              {children}
+            </OnboardingGate>
           </div>
         </>
       )}

@@ -16,6 +16,7 @@ services:
     volumes:
       - ./keycloak:/opt/keycloak/data/import
       - ./keycloak/themes:/opt/keycloak/themes
+      - ./keycloak/data:/opt/keycloak/data/h2
     networks:
       - medbridge-net
     healthcheck:
@@ -83,6 +84,7 @@ services:
       REDIS_HOST: redis
       FHIR_SERVICE_URL: http://fhir-service:8083
       TERMINOLOGY_SERVICE_URL: http://terminology-service:8082
+      USER_PROFILE_SERVICE_URL: http://user-service:8086
     depends_on:
       eureka:
         condition: service_healthy
@@ -94,6 +96,29 @@ services:
       - medbridge-net
     healthcheck:
       test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: medbridge-user-service
+    ports:
+      - "8086:8086"
+    environment:
+      EUREKA_URL: http://eureka:8761
+      MONGO_URI: ${MONGO_URI}
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-medbridge}
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - medbridge-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8086/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -146,3 +171,4 @@ services:
 networks:
   medbridge-net:
     driver: bridge
+

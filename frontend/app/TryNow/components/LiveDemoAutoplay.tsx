@@ -415,7 +415,6 @@ export default function LiveDemoAutoplay() {
       setCurrentView('overview');
       
     } catch (err) {
-      console.error('Search error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
       setApiResponse(null);
       setTM2Groups([]);

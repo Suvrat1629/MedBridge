@@ -12,12 +12,6 @@ spring:
       uri: ${MONGO_URI:mongo-uri}
   cache:
     type: caffeine
-    cache-names:
-      - code-lookup
-      - category-lookup
-      - namaste-code-lookup
-    caffeine:
-      spec: maximumSize=500,expireAfterWrite=3600s
 
 eureka:
   client:

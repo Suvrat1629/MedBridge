@@ -21,7 +21,7 @@ export default function GlobalBackground() {
 
       {/* Global medical grid */}
       <div className="absolute inset-0">
-        <svg className="w-full h-full" viewBox="0 0 100% 100%" preserveAspectRatio="none">
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
             <pattern id="medical-grid" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
               <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.5" />

@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useKeycloak } from '@/contexts/KeycloakContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import InitialsAvatar from '@/components/InitialsAvatar';
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValue } from 'framer-motion';
 import { User, Shield, Activity, Heart, Clock, Check, CreditCard as Edit3, Save, X, Bell, Settings, LogOut, Dna, Stethoscope, Plus, Key, Copy, RefreshCw, Code, Zap, Globe, BarChart2, TrendingUp, PieChart, Users, BookOpen, HelpCircle } from 'lucide-react';
 
@@ -334,11 +336,7 @@ const ProfileHeader: React.FC<{
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
-            <img
-              src={profile.avatarUrl}
-              alt={profile.name}
-              className="w-full h-full object-cover"
-            />
+            <InitialsAvatar name={profile.name} size={128} />
             {profile.isOnline && (
               <motion.div
                 className="absolute inset-0 rounded-full border-4 border-emerald-400"
@@ -1017,31 +1015,39 @@ const BackgroundPattern: React.FC = () => (
 // Main Profile Page Component
 const ProfilePage: React.FC = () => {
   const { userInfo, logout } = useKeycloak();
+  const { profile: serviceProfile, loading: profileLoading, updateProfile } = useUserProfile();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (userInfo.id) {
+    if (userInfo.id && !profileLoading) {
       setProfile({
         id: userInfo.id,
-        name: userInfo.name || userInfo.username || 'Unknown User',
+        name: serviceProfile?.displayName || userInfo.name || userInfo.username || 'Unknown User',
         email: userInfo.email || '',
-        phone: '',
+        phone: serviceProfile?.phone || '',
         avatarUrl: '',
         verified: true,
         isOnline: true,
         lastLogin: new Date().toISOString(),
-        joinedDate: new Date().toISOString(),
+        joinedDate: serviceProfile?.createdAt || new Date().toISOString(),
         apiKeys: [],
       });
       setIsLoading(false);
     }
-  }, [userInfo]);
+  }, [userInfo, serviceProfile, profileLoading]);
 
-  const handleProfileUpdate = (field: keyof UserProfile, value: any) => {
+  const handleProfileUpdate = async (field: keyof UserProfile, value: any) => {
     if (profile) {
       setProfile({ ...profile, [field]: value });
+      if (field === 'name' || field === 'phone') {
+        await updateProfile({
+          displayName: field === 'name' ? value : profile.name,
+          phone: field === 'phone' ? value : profile.phone,
+          onboarded: true,
+        }).catch(() => {});
+      }
     }
   };
 

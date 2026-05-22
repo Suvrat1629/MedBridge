@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .authorizeExchange(authz -> authz
                         .pathMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers("/api/terminology/**").permitAll()
+                        .pathMatchers("/api/users/**").authenticated()
                         .pathMatchers("/api/fhir/**").authenticated()
                         .pathMatchers("/smart-search/**").permitAll()
                         .pathMatchers("/actuator/**").permitAll()

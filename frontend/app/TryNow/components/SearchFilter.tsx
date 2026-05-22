@@ -131,67 +131,9 @@ export default function SearchFilter({
   };
 
   const performSearch = useCallback(async (query: string, mode: 'code' | 'symptoms', fromUserTyping: boolean) => {
-    if (!query.trim()) {
-      clearSmartResults();
-      setShowDropdown(false);
-      return;
-    }
-
-    if (!fromUserTyping) {
-      return;
-    }
-
-    setStatusMessage('Searching...');
-    setStatusType('loading');
-    clearSmartResults(false);
-    setShowDropdown(true);
-
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SEARCH_URL}/smart-search?query=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error('Search failed');
-      const data: SearchData = await response.json();
-
-      setSearchData(data);
-
-      let message = '';
-      let type: typeof statusType = 'info';
-
-      if (data.auto_corrected) {
-        message = `No results for "${data.original_query}". Showing results for "${data.corrected_to}" in ${data.search_time}`;
-        type = 'warning';
-        setCorrectionInfo(`Search Correction: No results for "${data.original_query}" → Showing results for "${data.corrected_to}"`);
-      } else if (data.total_results > 0) {
-        message = `Found ${data.total_results} results in ${data.search_time}`;
-        type = 'success';
-      } else {
-        message = `No results found for "${data.query}" in ${data.search_time}`;
-        type = 'error';
-      }
-
-      setStatusMessage(message);
-      setStatusType(type);
-
-      if (data.suggestions.length > 0) {
-        setSuggestions(data.suggestions);
-      }
-
-      if (data.similar_results_when_no_match.length > 0) {
-        setSimilarResults(data.similar_results_when_no_match);
-      }
-
-      const hasResults = data.results.length > 0;
-      const hasSuggestions = data.suggestions.length > 0;
-      const hasSimilar = data.similar_results_when_no_match.length > 0;
-      
-      const shouldShowDropdown = hasResults || (hasSuggestions && !hasResults) || hasSimilar;
-      
-      setShowDropdown(shouldShowDropdown);
-
-    } catch (error) {
-      setStatusMessage(`Error: ${(error as Error).message}`);
-      setStatusType('error');
-      setShowDropdown(false);
-    }
+    // smart-search service not available — autocomplete disabled
+    clearSmartResults();
+    setShowDropdown(false);
   }, []);
 
   const debouncedSearch = useCallback(debounce(performSearch, 300), [performSearch]);

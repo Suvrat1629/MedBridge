@@ -14,8 +14,8 @@
   "emailTheme": "keycloak",
   "bruteForceProtected": true,
   "permanentLockout": false,
-  "accessTokenLifespan": 300,
-  "ssoSessionMaxLifespan": 36000,
+  "accessTokenLifespan": 3600,
+  "ssoSessionMaxLifespan": 86400,
   "offlineSessionMaxLifespan": 5184000,
   "roles": {
     "realm": [
